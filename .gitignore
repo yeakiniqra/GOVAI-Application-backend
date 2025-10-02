@@ -1,0 +1,15 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.log
+
+venv/
+.env/
+env/
+.env.local
+# Ignore environment variable files
+.env
+.importan.md
