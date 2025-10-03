@@ -17,11 +17,11 @@ class Settings(BaseSettings):
     # AI Model settings
     AI_MODEL: str = "openai/gpt-oss-120b"
     AI_PROVIDER: str = "fireworks-ai"
-    MAX_TOKENS: int = 2048
+    MAX_TOKENS: int = 3000
     TEMPERATURE: float = 0.2
     
     # Search settings
-    SEARCH_MAX_RESULTS: int = 7
+    SEARCH_MAX_RESULTS: int = 6
     SEARCH_TIMEOUT: int = 10
     
     # LangChain settings
