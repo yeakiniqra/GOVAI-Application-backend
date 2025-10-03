@@ -84,7 +84,7 @@ TAVILY_API_KEY=tvly_your_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
 
 # AI Model Configuration
-AI_MODEL=google/gemma-2-2b-it
+AI_MODEL=google/gemma-2-2b-it OR openai/gpt-oss-120b
 MAX_TOKENS=512
 TEMPERATURE=0.7
 
@@ -283,7 +283,7 @@ SEARCH_MAX_RESULTS = 5
 
 For best Bangla language support, use these models:
 
-1. **google/gemma-2-2b-it** (Recommended) - Best Bangla support, fast
+1. **google/gemma-2-2b-it** (Recommended) - Best Bangla support, fast OR openai/gpt-oss-120b
 2. **mistralai/Mistral-7B-Instruct-v0.2** - Good multilingual support
 3. **meta-llama/Llama-2-7b-chat-hf** - Requires model access approval
 
@@ -368,7 +368,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ### Hugging Face API Error
 **Problem**: "Task 'text-generation' not supported"  
 **Solution**: 
-- Make sure you're using a compatible model
+- Make sure you're using a compatible model like openai/gpt-oss-120b
 - Change AI_MODEL to `google/gemma-2-2b-it` in `.env`
 - Verify your HF_TOKEN is valid
 
@@ -443,9 +443,10 @@ Factors affecting performance:
 - Implement rate limiting
 - Add authentication for public deployment
 
-## License
+## 📞 Contact
 
-[Add your license here]
+- GitHub: [yeakiniqra](https://github.com/yeakiniqra)  
+- Website: [www.yeakiniqra.com](https://www.yeakiniqra.com)
 
 ## Support
 
