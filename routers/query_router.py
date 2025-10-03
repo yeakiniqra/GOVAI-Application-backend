@@ -96,19 +96,3 @@ async def process_query(request: QueryRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"প্রশ্ন প্রক্রিয়াকরণে সমস্যা হয়েছে: {str(e)}"
         )
-
-
-@router.get("/")
-async def root():
-    """Root endpoint with API information"""
-    return {
-        "name": "GovAI Bangladesh API",
-        "version": "1.0.0",
-        "description": "AI-powered government information assistant for Bangladesh",
-        "endpoints": {
-            "health": "/health",
-            "query": "/query (POST)",
-            "docs": "/docs"
-        },
-        "message": "স্বাগতম GovAI Bangladesh এ - আপনার সরকারি তথ্য সহায়ক"
-    }

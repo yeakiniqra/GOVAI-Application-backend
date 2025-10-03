@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -9,41 +8,24 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("govai_backend.log"),
         logging.StreamHandler()
     ]
 )
 
 logger = logging.getLogger(__name__)
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan events"""
-    # Startup
-    logger.info("=" * 60)
-    logger.info("Starting GovAI Bangladesh API")
-    logger.info(f"API Version: {settings.API_VERSION}")
-    logger.info(f"AI Model: {settings.AI_MODEL}")
-    logger.info("=" * 60)
-    
-    yield  
-    
-    logger.info("Shutting down GovAI Bangladesh API")
-
-
 app = FastAPI(
     title=settings.API_TITLE,
     description=settings.API_DESCRIPTION,
     version=settings.API_VERSION,
-    lifespan=lifespan
 )
 
-
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -52,18 +34,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# Trusted Host Middleware
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"]  
 )
 
+# Rate Limiting
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
 app.include_router(query_router.router, tags=["queries"])
 
+@app.get("/")
+async def root():
+    """Root endpoint with API information"""
+    logger.info("Root endpoint accessed")
+    return {
+        "name": "GovAI Bangladesh API",
+        "version": "1.0.0",
+        "description": "AI-powered government information assistant for Bangladesh",
+        "endpoints": {
+            "health": "/health",
+            "query": "/query (POST)",
+            "docs": "/docs"
+        },
+        "message": "স্বাগতম GovAI Bangladesh এ - আপনার সরকারি তথ্য সহায়ক"
+    }
 
 if __name__ == "__main__":
     import uvicorn
