@@ -115,3 +115,27 @@ def truncate_text(text: str, max_length: int = 500) -> str:
         return text
     
     return text[:max_length] + "..."
+
+
+def humanize_response(text: str) -> str:
+    """
+    Make AI response more human-friendly
+    
+    Args:
+        text: Raw AI response
+    
+    Returns:
+        Humanized response
+    """
+    # Basic cleanup
+    text = text.strip()
+    
+    # Ensure proper punctuation
+    if not text.endswith(('.', '!', '?')):
+        text += '.'
+    
+    # Capitalize first letter
+    if text:
+        text = text[0].upper() + text[1:]
+    
+    return text

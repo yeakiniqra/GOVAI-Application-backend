@@ -2,13 +2,17 @@ from fastapi import APIRouter, HTTPException, status
 from models.schemas import QueryRequest, QueryResponse, HealthResponse
 from services.ai_service import ai_service
 from services.search_service import search_service
-from utils.helpers import detect_language, sanitize_query, is_government_related
+from utils.helpers import detect_language, sanitize_query, is_government_related, humanize_response
 import logging
 import time
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -20,6 +24,7 @@ async def health_check():
     )
 
 
+@limiter.limit("10/minute") # Rate limit to 10 requests per minute per IP
 @router.post("/query", response_model=QueryResponse)
 async def process_query(request: QueryRequest):
     """
@@ -34,7 +39,6 @@ async def process_query(request: QueryRequest):
     start_time = time.time()
     
     try:
-        # Sanitize query
         clean_query = sanitize_query(request.query)
         
         if not clean_query:
@@ -75,7 +79,7 @@ async def process_query(request: QueryRequest):
         # Prepare response
         response = QueryResponse(
             query=clean_query,
-            answer=ai_response,
+            answer=humanize_response(ai_response),
             sources=search_results if request.include_sources else None,
             processing_time=round(processing_time, 2)
         )

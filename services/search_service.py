@@ -109,7 +109,7 @@ class SearchService:
             return self._get_fallback_results(query)
         
         try:
-            # Add Bangladesh government context to improve relevance
+            # query with site-specific search for government domains
             enhanced_query = f"{query} Bangladesh government official site:gov.bd OR site:bangladesh.gov.bd"
             
             logger.info(f"Searching for: {enhanced_query}")
@@ -166,10 +166,10 @@ class SearchService:
                             title=item.get("title", ""),
                             url=item.get("link", ""),
                             snippet=item.get("snippet", ""),
-                            score=1.0  # SerpAPI doesn't provide scores
+                            score=1.0  
                         ))
             elif isinstance(results, dict):
-                # Handle alternative SerpAPI response format
+               
                 organic_results = results.get("organic_results", [])
                 for item in organic_results:
                     if isinstance(item, dict):
@@ -190,7 +190,6 @@ class SearchService:
         """Provide fallback search results when no search tool is available"""
         logger.info("Providing fallback search results")
         
-        # Basic fallback results for common government services
         fallback_results = []
         
         query_lower = query.lower()
@@ -253,7 +252,7 @@ class SearchService:
         if not fallback_results:
             fallback_results.append(SearchResult(
                 title="বাংলাদেশ সরকারের তথ্য বাতায়ন",
-                url="https://bangladesh.gov.bd/",
+                url="https://bsl.gov.bd/",
                 snippet="বাংলাদেশ সরকারের সকল মন্ত্রণালয় ও বিভাগের তথ্য ও সেবা।",
                 score=1.0
             ))

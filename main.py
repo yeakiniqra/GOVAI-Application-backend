@@ -5,8 +5,10 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from config.settings import settings
 from routers import query_router
 import logging
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -29,13 +31,11 @@ async def lifespan(app: FastAPI):
     logger.info(f"AI Model: {settings.AI_MODEL}")
     logger.info("=" * 60)
     
-    yield  # Application runs here
+    yield  
     
-    # Shutdown
     logger.info("Shutting down GovAI Bangladesh API")
 
 
-# Create FastAPI app with lifespan
 app = FastAPI(
     title=settings.API_TITLE,
     description=settings.API_DESCRIPTION,
@@ -43,23 +43,27 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Add trusted host middleware
+
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure this properly for production
+    allowed_hosts=["*"]  
 )
 
-# Include routers
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.include_router(query_router.router, tags=["queries"])
+
 
 if __name__ == "__main__":
     import uvicorn
