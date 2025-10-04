@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard - GovAI Bangladesh{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-8">Dashboard Overview</h1>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <h3 class="text-lg font-semibold mb-2">Total Queries</h3>
+        <p class="text-4xl font-bold">{{ stats.total_queries }}</p>
+        <p class="text-blue-100 mt-2">All time</p>
+    </div>
+
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+        <h3 class="text-lg font-semibold mb-2">Today's Queries</h3>
+        <p class="text-4xl font-bold">{{ stats.queries_today }}</p>
+        <p class="text-green-100 mt-2">Last 24 hours</p>
+    </div>
+
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        <h3 class="text-lg font-semibold mb-2">Success Rate</h3>
+        <p class="text-4xl font-bold">{{ stats.success_rate }}%</p>
+        <p class="text-purple-100 mt-2">Query success</p>
+    </div>
+
+    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+        <h3 class="text-lg font-semibold mb-2">Avg Response</h3>
+        <p class="text-4xl font-bold">{{ stats.avg_processing_time }}s</p>
+        <p class="text-orange-100 mt-2">Processing time</p>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent Queries -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Recent Queries</h3>
+        <div class="space-y-3">
+            {% for log in recent_logs[:10] %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-900 truncate">{{ log.query }}</p>
+                    <p class="text-xs text-gray-500">{{ log.timestamp[:19] }} • {{ log.language }}</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {% if log.status == 'success' %}bg-green-100 text-green-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ log.status }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-4">
+            <a href="/admin/logs" class="text-green-600 hover:text-green-800 text-sm font-medium">View all logs →</a>
+        </div>
+    </div>
+
+    <!-- Popular Queries -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Popular Queries</h3>
+        <div class="space-y-3">
+            {% for item in stats.top_queries[:10] %}
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-900 truncate">{{ item.query }}</p>
+                </div>
+                <span class="text-sm text-gray-500 font-medium">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-4">
+            <a href="/admin/stats" class="text-green-600 hover:text-green-800 text-sm font-medium">View statistics →</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

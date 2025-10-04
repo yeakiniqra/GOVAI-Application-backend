@@ -15,26 +15,34 @@ AI-powered government information assistant for Bangladesh that provides step-by
 ## Project Structure
 
 ```
-govai-backend/
-├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (create from .env.example)
+govai_backend/
+├── main.py                          # Updated with admin routes
+├── requirements.txt                 # Updated with new dependencies
+├── .env                            # Environment variables
+├── .env.example                    # Environment template
+├── logs/                           # Auto-created for query logs
+│   └── queries.jsonl              # Query logs (auto-created)
+├── static/                         # Static files directory
+├── templates/                      # Jinja2 templates
+│   └── admin/
+│       ├── login.html             # Login page
+│       ├── dashboard.html         # Main dashboard
+│       ├── logs.html              # Logs viewer
+│       └── stats.html             # Statistics page
 ├── config/
-│   ├── __init__.py
-│   └── settings.py        # Configuration and settings
+│   └── settings.py                # Updated with admin settings
 ├── models/
-│   ├── __init__.py
-│   └── schemas.py         # Pydantic models
-├── services/
-│   ├── __init__.py
-│   ├── ai_service.py      # AI/LLM integration with LangGraph
-│   └── search_service.py  # Tavily/SerpAPI integration
-├── routers/
-│   ├── __init__.py
-│   └── query_router.py    # API routes
-└── utils/
-    ├── __init__.py
-    └── helpers.py         # Utility functions
+│   ├── schemas.py                 # Existing schemas
+│   └── admin_schemas.py           # NEW: Admin data models
+├── utils/
+│   ├── helpers.py                 # Existing helpers
+│   ├── admin_auth.py              # NEW: Authentication utilities
+│   └── query_logger.py            # NEW: Query logging system
+├── admin/
+│   ├── __init__.py               # NEW: Admin package init
+│   └── routes.py                 # NEW: Admin routes
+└── routers/
+    └── query_router.py           # Updated with logging
 ```
 
 ## Prerequisites
@@ -95,6 +103,11 @@ SEARCH_MAX_RESULTS=5
 HOST=0.0.0.0
 PORT=8000
 DEBUG=True
+```
+
+**⚠️ IMPORTANT**: Generate a secure secret key:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 ### 3. Get API Keys
@@ -344,6 +357,55 @@ COPY . .
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
+## 🔐 Accessing the Admin Dashboard
+
+### Login
+
+1. Navigate to: `http://localhost:8000/admin/login`
+2. Enter credentials:
+   - Username: `admin` (or your custom username)
+   - Password: Your password from `.env`
+
+### Dashboard Features
+
+**Main Dashboard** (`/admin/dashboard`):
+- Real-time statistics cards
+- Query trend charts (last 24 hours)
+- Language distribution pie chart
+- Top 10 most frequent queries
+- Recent queries list
+
+**Logs Page** (`/admin/logs`):
+- Complete query logs table
+- Search functionality
+- Filter by status (success/error)
+- Filter by language (Bengali/English/Banglish)
+- Export to CSV
+
+**Statistics Page** (`/admin/stats`):
+- Detailed performance metrics
+- Enhanced visualizations
+- Top 20 queries with percentages
+- Language breakdown
+
+## 🔒 Security Features
+
+1. **JWT Authentication**: Session-based authentication using JWT tokens
+2. **HTTP-Only Cookies**: Tokens stored in secure cookies
+3. **Password Hashing**: Using bcrypt (ready for production)
+4. **Session Expiration**: Auto-logout after configured time
+5. **Protected Routes**: All admin routes require authentication
+
+## 📊 Query Logging
+
+The system automatically logs:
+- Query text
+- Detected language
+- Processing time
+- Client IP address
+- Success/failure status
+- Timestamp
 
 ### Production Checklist
 
