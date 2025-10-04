@@ -1,22 +1,53 @@
 import json
 import os
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import Counter
 import logging
 
 logger = logging.getLogger(__name__)
 
 class QueryLogger:
-    """Logger for tracking all queries and stats"""
+    """Logger for tracking queries - Vercel compatible version"""
     
     def __init__(self, log_file: str = "logs/queries.jsonl"):
         self.log_file = log_file
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        self.use_file_logging = self._check_file_system_writable()
+        
+        if self.use_file_logging:
+            try:
+                os.makedirs(os.path.dirname(log_file), exist_ok=True)
+                logger.info("File-based logging enabled")
+            except Exception as e:
+                logger.warning(f"File system not writable, using in-memory logging: {e}")
+                self.use_file_logging = False
+        
+        # In-memory storage for serverless environments
+        self.memory_logs = []
+        self.max_memory_logs = 1000
+    
+    def _check_file_system_writable(self) -> bool:
+        """Check if file system is writable (fails on Vercel)"""
+        try:
+            test_dir = os.path.dirname(self.log_file)
+            if not test_dir:
+                test_dir = "."
+            
+            # Try to create directory
+            os.makedirs(test_dir, exist_ok=True)
+            
+            # Try to write a test file
+            test_file = os.path.join(test_dir, ".write_test")
+            with open(test_file, 'w') as f:
+                f.write("test")
+            os.remove(test_file)
+            return True
+        except (OSError, PermissionError):
+            return False
     
     def log_query(self, query: str, language: str, processing_time: float, 
                   ip_address: str, status: str = "success"):
-        """Log a query to file"""
+        """Log a query (file or memory based on environment)"""
         log_entry = {
             "timestamp": datetime.utcnow().isoformat(),
             "query": query,
@@ -26,27 +57,42 @@ class QueryLogger:
             "status": status
         }
         
-        try:
-            with open(self.log_file, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
-        except Exception as e:
-            logger.error(f"Failed to log query: {str(e)}")
+        if self.use_file_logging:
+            try:
+                with open(self.log_file, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            except Exception as e:
+                logger.error(f"Failed to log query to file: {str(e)}")
+                # Fallback to memory
+                self._log_to_memory(log_entry)
+        else:
+            # Use in-memory logging for serverless
+            self._log_to_memory(log_entry)
+    
+    def _log_to_memory(self, log_entry: Dict):
+        """Store log in memory (for serverless environments)"""
+        self.memory_logs.append(log_entry)
+        # Keep only recent logs to avoid memory issues
+        if len(self.memory_logs) > self.max_memory_logs:
+            self.memory_logs = self.memory_logs[-self.max_memory_logs:]
     
     def get_all_logs(self, limit: int = 1000) -> List[Dict]:
-        """Get all query logs"""
-        if not os.path.exists(self.log_file):
-            return []
-        
-        logs = []
-        try:
-            with open(self.log_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        logs.append(json.loads(line))
-        except Exception as e:
-            logger.error(f"Failed to read logs: {str(e)}")
-        
-        return logs[-limit:]
+        """Get all query logs (from file or memory)"""
+        if self.use_file_logging and os.path.exists(self.log_file):
+            logs = []
+            try:
+                with open(self.log_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if line.strip():
+                            logs.append(json.loads(line))
+            except Exception as e:
+                logger.error(f"Failed to read logs from file: {str(e)}")
+                return self.memory_logs[-limit:]
+            
+            return logs[-limit:]
+        else:
+            # Return from memory
+            return self.memory_logs[-limit:]
     
     def get_recent_logs(self, limit: int = 50) -> List[Dict]:
         """Get recent query logs"""
