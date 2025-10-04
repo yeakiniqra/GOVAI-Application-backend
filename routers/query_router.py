@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from models.schemas import QueryRequest, QueryResponse, HealthResponse
 from services.ai_service import ai_service
 from services.search_service import search_service
 from utils.helpers import detect_language, sanitize_query, is_government_related, humanize_response
+from utils.query_logger import query_logger
 import logging
 import time
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 logger = logging.getLogger(__name__)
@@ -24,22 +25,24 @@ async def health_check():
     )
 
 
-@limiter.limit("10/minute") # Rate limit to 10 requests per minute per IP
+@limiter.limit("10/minute")
 @router.post("/query", response_model=QueryResponse)
-async def process_query(request: QueryRequest):
+async def process_query(request: Request, query_request: QueryRequest):
     """
     Process user query and return AI-generated response
     
     Args:
-        request: Query request containing user question
+        request: FastAPI request object
+        query_request: Query request containing user question
     
     Returns:
         AI-generated response with sources
     """
     start_time = time.time()
+    client_ip = request.client.host if request.client else "unknown"
     
     try:
-        clean_query = sanitize_query(request.query)
+        clean_query = sanitize_query(query_request.query)
         
         if not clean_query:
             raise HTTPException(
@@ -47,7 +50,7 @@ async def process_query(request: QueryRequest):
                 detail="প্রশ্ন খালি রাখা যাবে না"
             )
         
-        logger.info(f"Processing query: {clean_query}")
+        logger.info(f"Processing query from {client_ip}: {clean_query}")
         
         # Detect language for better search
         detected_lang = detect_language(clean_query)
@@ -76,11 +79,20 @@ async def process_query(request: QueryRequest):
         # Calculate processing time
         processing_time = time.time() - start_time
         
+        # Log the query
+        query_logger.log_query(
+            query=clean_query,
+            language=detected_lang,
+            processing_time=processing_time,
+            ip_address=client_ip,
+            status="success"
+        )
+        
         # Prepare response
         response = QueryResponse(
             query=clean_query,
             answer=humanize_response(ai_response),
-            sources=search_results if request.include_sources else None,
+            sources=search_results if query_request.include_sources else None,
             processing_time=round(processing_time, 2)
         )
         
@@ -88,9 +100,27 @@ async def process_query(request: QueryRequest):
         
         return response
         
-    except HTTPException:
+    except HTTPException as e:
+        # Log failed query
+        processing_time = time.time() - start_time
+        query_logger.log_query(
+            query=query_request.query,
+            language="unknown",
+            processing_time=processing_time,
+            ip_address=client_ip,
+            status="error"
+        )
         raise
     except Exception as e:
+        # Log failed query
+        processing_time = time.time() - start_time
+        query_logger.log_query(
+            query=query_request.query,
+            language="unknown",
+            processing_time=processing_time,
+            ip_address=client_ip,
+            status="error"
+        )
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

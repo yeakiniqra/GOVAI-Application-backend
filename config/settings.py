@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: Optional[str] = None
     SERPAPI_API_KEY: Optional[str] = None
     
+    # Admin Authentication
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "admin"
+    SECRET_KEY: str = "admin"
+    SESSION_EXPIRE_MINUTES: int = 60
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
