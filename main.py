@@ -45,8 +45,9 @@ app.add_middleware(
     allowed_hosts=["*"]  
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# Vercel Doesn't support static files so commenting out for now
+# app.mount("/static", StaticFiles(directory="static"), name="static")
+# templates = Jinja2Templates(directory="templates")
 
 # Rate Limiting
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
@@ -55,7 +56,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 app.include_router(query_router.router, tags=["queries"])
-app.include_router(admin_router, tags=["admin"])
+# app.include_router(admin_router, tags=["admin"]) # Commenting out admin routes for now
 
 @app.get("/")
 async def root():
